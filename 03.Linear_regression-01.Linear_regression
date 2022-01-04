@@ -1,0 +1,234 @@
+{
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/a00101/datascience101/blob/main/03.Linear_regression-01.Linear_regression\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "지도학습에는 regression와 classification이 있음. \n",
+        "\n",
+        "이번에는 regression 중 **linear regression**을 다룸\n",
+        "\n",
+        "**2. 가설 (hypothesis) 수립**\n",
+        "\n",
+        "y = Wx+b 형식이라고 가정\n",
+        "\n",
+        "**3. Cost function**\n",
+        "\n",
+        "오차를 modeling 하는 수식\n",
+        "\n",
+        " = Cost function (비용 함수) = loss function (손실 함수) = error function (오차 함수) = objective function (목적 함수)\n",
+        "\n",
+        "\n",
+        "**3. Optimizer - Gradient descent**\n",
+        "\n",
+        "Optimizer 알고리즘 (=최적화 알고리즘)\n",
+        "\n",
+        "기본적인 optimizer 알고리즘 중 하나인 gradient descent.\n",
+        "\n"
+      ],
+      "metadata": {
+        "id": "0vI4KhleZnwW"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Step1 - 기본 세팅\n",
+        "import torch\n",
+        "import torch.nn as nn\n",
+        "import torch.nn.functional as F\n",
+        "import torch.optim as optim\n"
+      ],
+      "metadata": {
+        "id": "JvBrEY8Gaa1I"
+      },
+      "execution_count": 6,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Step2 - 변수 선언\n",
+        "x_train = torch.FloatTensor([[1], [2], [3]])\n",
+        "y_train = torch.FloatTensor([[2], [4], [6]])\n"
+      ],
+      "metadata": {
+        "id": "4pjyyIuxarBG"
+      },
+      "execution_count": 7,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Step3 - 가중치와 편향 초기화\n",
+        "\n",
+        "W = torch.zeros(1, requires_grad=True)  # 가중치 W를 0으로 초기화하고 학습을 통해 값이 변경되는 변수(requires_grad)임을 명시함\n",
+        "print(W) # 가중치 출력\n",
+        "b = torch.zeros(1, requires_grad=True) # 편향 b를 0으로 초기화\n",
+        "print(b) # 편향 출력"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "Zrlo829favZe",
+        "outputId": "af3a74fa-4642-4c52-a0a9-4c6ad1b83ba4"
+      },
+      "execution_count": 8,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "tensor([0.], requires_grad=True)\n",
+            "tensor([0.], requires_grad=True)\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Step4 - 가설 세우기\n",
+        "hypothesis = x_train * W + b # hypo = x*W + b\n",
+        "print(hypothesis)"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "VoxnaPv8bTMR",
+        "outputId": "f218b600-d4f4-47ee-ba9f-39b8eebadc6d"
+      },
+      "execution_count": 9,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "tensor([[0.],\n",
+            "        [0.],\n",
+            "        [0.]], grad_fn=<AddBackward0>)\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Step5 - 비용 함수 선언하기\n",
+        "cost = torch.mean((hypothesis - y_train) ** 2) # 편차의 제곱으로 cost 를 정의\n",
+        "print(cost)"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "R-DTw69obe_p",
+        "outputId": "ef573ff3-1ff0-4474-c510-a3b53cf6ca9f"
+      },
+      "execution_count": 10,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "tensor(18.6667, grad_fn=<MeanBackward0>)\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Step6 - 경사 하강법 구현하기\n",
+        "optimizer = optim.SGD([W, b], lr=0.01) # lr = learning rate\n",
+        "optimizer.zero_grad() # gradient 를 0으로 초기화\n",
+        "cost.backward() # 비용 함수를 미분하여 gradient 계산\n",
+        "optimizer.step() # W와 b를 업데이트"
+      ],
+      "metadata": {
+        "id": "1cVGxCGncJpX"
+      },
+      "execution_count": 11,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Step7 - 반복시행\n",
+        "\n",
+        "nb_epochs = 10000 # 원하는만큼 경사 하강법을 반복\n",
+        "for epoch in range(nb_epochs + 1):\n",
+        "\n",
+        "    # H(x) 계산\n",
+        "    hypothesis = x_train * W + b\n",
+        "\n",
+        "    # cost 계산\n",
+        "    cost = torch.mean((hypothesis - y_train) ** 2)\n",
+        "\n",
+        "    # cost로 H(x) 개선\n",
+        "    optimizer.zero_grad()\n",
+        "    cost.backward()\n",
+        "    optimizer.step()\n",
+        "\n",
+        "    # 100번마다 로그 출력\n",
+        "    if epoch % 1000 == 0:\n",
+        "        print('Epoch {:4d}/{} W: {:.3f}, b: {:.3f} Cost: {:.6f}'.format(\n",
+        "            epoch, nb_epochs, W.item(), b.item(), cost.item()\n",
+        "        ))"
+      ],
+      "metadata": {
+        "id": "q4esYzIBcj9f",
+        "outputId": "f3753593-e52b-4267-9a08-b96d0b47af19",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        }
+      },
+      "execution_count": 13,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Epoch    0/10000 W: 1.971, b: 0.066 Cost: 0.000627\n",
+            "Epoch 1000/10000 W: 1.997, b: 0.006 Cost: 0.000005\n",
+            "Epoch 2000/10000 W: 2.000, b: 0.001 Cost: 0.000000\n",
+            "Epoch 3000/10000 W: 2.000, b: 0.000 Cost: 0.000000\n",
+            "Epoch 4000/10000 W: 2.000, b: 0.000 Cost: 0.000000\n",
+            "Epoch 5000/10000 W: 2.000, b: 0.000 Cost: 0.000000\n",
+            "Epoch 6000/10000 W: 2.000, b: 0.000 Cost: 0.000000\n",
+            "Epoch 7000/10000 W: 2.000, b: 0.000 Cost: 0.000000\n",
+            "Epoch 8000/10000 W: 2.000, b: 0.000 Cost: 0.000000\n",
+            "Epoch 9000/10000 W: 2.000, b: 0.000 Cost: 0.000000\n",
+            "Epoch 10000/10000 W: 2.000, b: 0.000 Cost: 0.000000\n"
+          ]
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "colab": {
+      "collapsed_sections": [],
+      "name": "Colaboratory에 오신 것을 환영합니다",
+      "provenance": [],
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "display_name": "Python 3",
+      "name": "python3"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 0
+}
